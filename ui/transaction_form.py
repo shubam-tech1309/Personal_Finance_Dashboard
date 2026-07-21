@@ -20,11 +20,6 @@ from utils.validators import (
 
 
 class TransactionForm(QFrame):
-    """
-    Transaction entry form.
-
-    Handles user input and emits saved data.
-    """
 
     def __init__(self):
 
@@ -32,7 +27,10 @@ class TransactionForm(QFrame):
 
         self.save_callback = None
 
+        self.edit_id = None
+
         self.setup_ui()
+
 
 
     def setup_ui(self):
@@ -68,7 +66,7 @@ class TransactionForm(QFrame):
 
 
         title = QLabel(
-            "New Transaction"
+            "Transaction"
         )
 
 
@@ -127,10 +125,6 @@ class TransactionForm(QFrame):
 
         self.description_input = QLineEdit()
 
-        self.description_input.setPlaceholderText(
-            "Example: Monthly salary"
-        )
-
 
         self.amount_input = QDoubleSpinBox()
 
@@ -152,20 +146,24 @@ class TransactionForm(QFrame):
             self.date_edit
         )
 
+
         form.addRow(
             "Type",
             self.type_combo
         )
+
 
         form.addRow(
             "Category",
             self.category_combo
         )
 
+
         form.addRow(
             "Description",
             self.description_input
         )
+
 
         form.addRow(
             "Amount",
@@ -178,32 +176,47 @@ class TransactionForm(QFrame):
         )
 
 
-        button_layout = QHBoxLayout()
-
-        button_layout.addStretch()
+        buttons = QHBoxLayout()
 
 
-        self.add_button = QPushButton(
-            "Add Transaction"
+        self.save_button = QPushButton(
+            "Save Transaction"
         )
 
 
-        self.add_button.clicked.connect(
-            self.handle_save
+        self.clear_button = QPushButton(
+            "Clear"
         )
 
 
-        button_layout.addWidget(
-            self.add_button
+        buttons.addWidget(
+            self.save_button
+        )
+
+
+        buttons.addWidget(
+            self.clear_button
         )
 
 
         layout.addLayout(
-            button_layout
+            buttons
         )
 
 
+        self.save_button.clicked.connect(
+            self.handle_save
+        )
+
+
+        self.clear_button.clicked.connect(
+            self.clear_form
+        )
+
+
+
     def handle_save(self):
+
 
         description = title_case(
             self.description_input.text()
@@ -230,6 +243,7 @@ class TransactionForm(QFrame):
             return
 
 
+
         data = {
 
             "date":
@@ -248,21 +262,64 @@ class TransactionForm(QFrame):
 
             "amount":
             amount
+
         }
+
 
 
         if self.save_callback:
 
             self.save_callback(
-                data
+                data,
+                self.edit_id
             )
+
 
 
         self.clear_form()
 
 
 
+    def load_transaction(
+        self,
+        record
+    ):
+
+        self.edit_id = record[0]
+
+
+        self.date_edit.setDate(
+            QDate.fromString(
+                record[1],
+                "yyyy-MM-dd"
+            )
+        )
+
+
+        self.type_combo.setCurrentText(
+            record[2]
+        )
+
+
+        self.category_combo.setCurrentText(
+            record[3]
+        )
+
+
+        self.description_input.setText(
+            record[4]
+        )
+
+
+        self.amount_input.setValue(
+            float(record[5])
+        )
+
+
+
     def clear_form(self):
+
+        self.edit_id = None
 
         self.description_input.clear()
 

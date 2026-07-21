@@ -8,14 +8,12 @@ from PySide6.QtWidgets import (
 
 from PySide6.QtCore import Qt
 
-
 from config.settings import (
     APP_NAME,
     APP_VERSION,
     WINDOW_WIDTH,
     WINDOW_HEIGHT,
 )
-
 
 from ui.header import Header
 
@@ -136,6 +134,11 @@ class MainWindow(QMainWindow):
         )
 
 
+        self.transaction_table.table.doubleClicked.connect(
+            self.edit_selected_transaction
+        )
+
+
         splitter.addWidget(
             self.transaction_form
         )
@@ -162,22 +165,105 @@ class MainWindow(QMainWindow):
 
     def save_transaction(
         self,
-        data
+        data,
+        edit_id=None
     ):
 
-        self.database.add_transaction(
-            data["date"],
-            data["type"],
-            data["category"],
-            data["description"],
-            data["amount"]
-        )
+
+        if edit_id:
+
+
+            self.database.update_transaction(
+
+                edit_id,
+
+                data["date"],
+
+                data["type"],
+
+                data["category"],
+
+                data["description"],
+
+                data["amount"]
+
+            )
+
+
+            message = "Transaction updated successfully."
+
+
+        else:
+
+
+            self.database.add_transaction(
+
+                data["date"],
+
+                data["type"],
+
+                data["category"],
+
+                data["description"],
+
+                data["amount"]
+
+            )
+
+
+            message = "Transaction added successfully."
+
 
 
         QMessageBox.information(
             self,
             "Success",
-            "Transaction added successfully."
+            message
+        )
+
+
+        self.load_transactions()
+
+        self.refresh_dashboard()
+
+
+
+    def edit_selected_transaction(
+        self
+    ):
+
+
+        transaction_id = (
+            self.transaction_table.selected_id()
+        )
+
+
+        records = (
+            self.database
+            .get_all_transactions()
+        )
+
+
+        for record in records:
+
+            if record[0] == transaction_id:
+
+                self.transaction_form.load_transaction(
+                    record
+                )
+
+                break
+
+
+
+    def delete_transaction(
+        self,
+        transaction_id
+    ):
+
+
+        self.database.delete_transaction(
+            transaction_id
         )
 
 
@@ -198,30 +284,6 @@ class MainWindow(QMainWindow):
         self.transaction_table.load_data(
             records
         )
-
-
-
-    def delete_transaction(
-        self,
-        transaction_id
-    ):
-
-
-        self.database.delete_transaction(
-            transaction_id
-        )
-
-
-        QMessageBox.information(
-            self,
-            "Deleted",
-            "Transaction deleted successfully."
-        )
-
-
-        self.load_transactions()
-
-        self.refresh_dashboard()
 
 
 

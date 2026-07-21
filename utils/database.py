@@ -7,10 +7,6 @@ from config.settings import (
 
 
 class DatabaseManager:
-    """
-    Handles all SQLite operations.
-    """
-
 
     def __init__(self):
 
@@ -92,13 +88,62 @@ class DatabaseManager:
             )
 
             VALUES
+            (?,?,?,?,?)
+
+            """,
             (
-                ?,
-                ?,
-                ?,
-                ?,
-                ?
+                date,
+                transaction_type,
+                category,
+                description,
+                amount
             )
+        )
+
+
+        connection.commit()
+
+        connection.close()
+
+
+
+    def update_transaction(
+        self,
+        transaction_id,
+        date,
+        transaction_type,
+        category,
+        description,
+        amount,
+    ):
+        """
+        Updates existing transaction.
+        """
+
+
+        connection = self.get_connection()
+
+        cursor = connection.cursor()
+
+
+        cursor.execute(
+            """
+            UPDATE transactions
+
+            SET
+
+            transaction_date = ?,
+
+            transaction_type = ?,
+
+            category = ?,
+
+            description = ?,
+
+            amount = ?
+
+            WHERE id = ?
+
             """,
             (
                 date,
@@ -106,6 +151,7 @@ class DatabaseManager:
                 category,
                 description,
                 amount,
+                transaction_id
             )
         )
 
@@ -157,10 +203,6 @@ class DatabaseManager:
         self,
         transaction_id
     ):
-        """
-        Deletes transaction permanently.
-        """
-
 
         connection = self.get_connection()
 
@@ -175,7 +217,7 @@ class DatabaseManager:
 
             """,
             (
-                transaction_id,
+                transaction_id
             )
         )
 
@@ -217,7 +259,6 @@ class DatabaseManager:
 
 
         for row in rows:
-
 
             if row[0] == "Income":
 

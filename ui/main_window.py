@@ -1,60 +1,151 @@
-from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QLabel,
     QMainWindow,
-    QStatusBar,
-    QVBoxLayout,
     QWidget,
+    QVBoxLayout,
+    QSplitter,
 )
+from PySide6.QtCore import Qt
 
 from config.settings import (
     APP_NAME,
     APP_VERSION,
-    WINDOW_HEIGHT,
     WINDOW_WIDTH,
+    WINDOW_HEIGHT,
 )
+
+from ui.header import Header
+from ui.components.dashboard_cards import DashboardCards
+from ui.transaction_form import TransactionForm
+from ui.transaction_table import TransactionTable
 
 
 class MainWindow(QMainWindow):
+    """
+    Main application window.
+
+    Controls the complete dashboard layout.
+    """
+
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle(f"{APP_NAME}  v{APP_VERSION}")
-        self.resize(WINDOW_WIDTH, WINDOW_HEIGHT)
+        self.setWindowTitle(
+            f"{APP_NAME} v{APP_VERSION}"
+        )
+
+        self.resize(
+            WINDOW_WIDTH,
+            WINDOW_HEIGHT,
+        )
 
         self.setup_ui()
 
+
     def setup_ui(self):
+
         central = QWidget()
-        self.setCentralWidget(central)
 
-        layout = QVBoxLayout()
-        layout.setContentsMargins(40, 40, 40, 40)
-        layout.setSpacing(20)
-
-        title = QLabel("Personal Finance Dashboard")
-        title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet("""
-            font-size:28px;
-            font-weight:700;
-        """)
-
-        subtitle = QLabel(
-            "Version 1.0 Development Started Successfully"
+        self.setCentralWidget(
+            central
         )
-        subtitle.setAlignment(Qt.AlignCenter)
-        subtitle.setStyleSheet("""
-            font-size:14px;
-            color:#6B7280;
-        """)
 
-        layout.addStretch()
-        layout.addWidget(title)
-        layout.addWidget(subtitle)
-        layout.addStretch()
 
-        central.setLayout(layout)
+        main_layout = QVBoxLayout(
+            central
+        )
 
-        status = QStatusBar()
-        status.showMessage("Ready")
-        self.setStatusBar(status)
+
+        main_layout.setContentsMargins(
+            20,
+            20,
+            20,
+            20,
+        )
+
+
+        main_layout.setSpacing(
+            20
+        )
+
+
+        # -----------------------------
+        # Header
+        # -----------------------------
+
+        self.header = Header()
+
+        main_layout.addWidget(
+            self.header
+        )
+
+
+        # -----------------------------
+        # Dashboard Statistics
+        # -----------------------------
+
+        self.dashboard_cards = DashboardCards()
+
+        main_layout.addWidget(
+            self.dashboard_cards
+        )
+
+
+        # -----------------------------
+        # Content Area
+        # -----------------------------
+
+        splitter = QSplitter(
+            Qt.Horizontal
+        )
+
+
+        splitter.setChildrenCollapsible(
+            False
+        )
+
+
+        splitter.setHandleWidth(
+            8
+        )
+
+
+        # -----------------------------
+        # Transaction Form
+        # -----------------------------
+
+        self.transaction_form = (
+            TransactionForm()
+        )
+
+
+        # -----------------------------
+        # Transaction Table
+        # -----------------------------
+
+        self.transaction_table = (
+            TransactionTable()
+        )
+
+
+        splitter.addWidget(
+            self.transaction_form
+        )
+
+
+        splitter.addWidget(
+            self.transaction_table
+        )
+
+
+        splitter.setSizes(
+            [
+                380,
+                900
+            ]
+        )
+
+
+        main_layout.addWidget(
+            splitter,
+            1
+        )

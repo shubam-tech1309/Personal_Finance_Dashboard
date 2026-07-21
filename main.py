@@ -8,17 +8,29 @@ from utils.database import DatabaseManager
 
 
 def main():
+
+    # Initialize database before starting UI
     database = DatabaseManager()
-    database.initialize()
+
+    database.initialize_database()
 
     app = QApplication(sys.argv)
 
-    app.setStyleSheet(APP_STYLE)
+    app.setApplicationName(
+        "Personal Finance Dashboard"
+    )
+
+    app.setStyleSheet(
+        APP_STYLE
+    )
 
     window = MainWindow()
+
     window.show()
 
-    sys.exit(app.exec())
+    sys.exit(
+        app.exec()
+    )
 
 
 if __name__ == "__main__":

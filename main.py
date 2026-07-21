@@ -4,9 +4,13 @@ from PySide6.QtWidgets import QApplication
 
 from styles.theme import APP_STYLE
 from ui.main_window import MainWindow
+from utils.database import DatabaseManager
 
 
 def main():
+    database = DatabaseManager()
+    database.initialize()
+
     app = QApplication(sys.argv)
 
     app.setStyleSheet(APP_STYLE)

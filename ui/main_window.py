@@ -1,60 +1,60 @@
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QWidget,
+    QLabel,
     QMainWindow,
-    QHBoxLayout,
-    QVBoxLayout
+    QStatusBar,
+    QVBoxLayout,
+    QWidget,
 )
 
-from ui.sidebar import Sidebar
-from ui.header import Header
-from ui.cards import DashboardCards
+from config.settings import (
+    APP_NAME,
+    APP_VERSION,
+    WINDOW_HEIGHT,
+    WINDOW_WIDTH,
+)
 
 
 class MainWindow(QMainWindow):
-
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("Personal Finance Dashboard")
+        self.setWindowTitle(f"{APP_NAME}  v{APP_VERSION}")
+        self.resize(WINDOW_WIDTH, WINDOW_HEIGHT)
 
-        self.resize(1200,750)
+        self.setup_ui()
 
-        self.setMinimumSize(1000,650)
+    def setup_ui(self):
+        central = QWidget()
+        self.setCentralWidget(central)
 
-        central_widget = QWidget()
+        layout = QVBoxLayout()
+        layout.setContentsMargins(40, 40, 40, 40)
+        layout.setSpacing(20)
 
-        self.setCentralWidget(central_widget)
+        title = QLabel("Personal Finance Dashboard")
+        title.setAlignment(Qt.AlignCenter)
+        title.setStyleSheet("""
+            font-size:28px;
+            font-weight:700;
+        """)
 
-        main_layout = QHBoxLayout()
+        subtitle = QLabel(
+            "Version 1.0 Development Started Successfully"
+        )
+        subtitle.setAlignment(Qt.AlignCenter)
+        subtitle.setStyleSheet("""
+            font-size:14px;
+            color:#6B7280;
+        """)
 
-        main_layout.setContentsMargins(0,0,0,0)
+        layout.addStretch()
+        layout.addWidget(title)
+        layout.addWidget(subtitle)
+        layout.addStretch()
 
-        main_layout.setSpacing(0)
+        central.setLayout(layout)
 
-        sidebar = Sidebar()
-
-        content = QWidget()
-
-        content_layout = QVBoxLayout()
-
-        content_layout.setContentsMargins(20,20,20,20)
-
-        content_layout.setSpacing(20)
-
-        header = Header()
-
-        cards = DashboardCards()
-
-        content_layout.addWidget(header)
-
-        content_layout.addWidget(cards)
-
-        content_layout.addStretch()
-
-        content.setLayout(content_layout)
-
-        main_layout.addWidget(sidebar)
-
-        main_layout.addWidget(content,1)
-
-        central_widget.setLayout(main_layout)
+        status = QStatusBar()
+        status.showMessage("Ready")
+        self.setStatusBar(status)

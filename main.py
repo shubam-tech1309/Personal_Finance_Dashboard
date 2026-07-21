@@ -2,28 +2,20 @@ import sys
 
 from PySide6.QtWidgets import QApplication
 
+from styles.theme import APP_STYLE
 from ui.main_window import MainWindow
-
-from database.database import DatabaseManager
 
 
 def main():
-
     app = QApplication(sys.argv)
 
-    database = DatabaseManager()
+    app.setStyleSheet(APP_STYLE)
 
     window = MainWindow()
-
     window.show()
 
-    exit_code = app.exec()
-
-    database.close()
-
-    sys.exit(exit_code)
+    sys.exit(app.exec())
 
 
 if __name__ == "__main__":
-
     main()

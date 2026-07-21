@@ -17,12 +17,16 @@ from PySide6.QtWidgets import (
 
 class TransactionTable(QFrame):
     """
-    Transaction table with:
+    Transaction table component.
 
+    Features:
+    - Display transactions
     - Search
-    - Type filter
+    - Filter
     - Refresh
     - Delete
+    - Export Excel
+    - Import Excel
     """
 
 
@@ -33,9 +37,14 @@ class TransactionTable(QFrame):
 
         self.all_records = []
 
+
         self.delete_callback = None
 
         self.refresh_callback = None
+
+        self.export_callback = None
+
+        self.import_callback = None
 
 
         self.setup_ui()
@@ -62,12 +71,12 @@ class TransactionTable(QFrame):
         )
 
 
-        layout = QVBoxLayout(
+        main_layout = QVBoxLayout(
             self
         )
 
 
-        layout.setContentsMargins(
+        main_layout.setContentsMargins(
             20,
             20,
             20,
@@ -75,12 +84,14 @@ class TransactionTable(QFrame):
         )
 
 
-        # ----------------------------
-        # Header
-        # ----------------------------
+        main_layout.setSpacing(
+            15
+        )
 
 
-        header = QHBoxLayout()
+
+        header_layout = QHBoxLayout()
+
 
 
         title = QLabel(
@@ -96,12 +107,13 @@ class TransactionTable(QFrame):
         )
 
 
-        header.addWidget(
+        header_layout.addWidget(
             title
         )
 
 
-        header.addStretch()
+        header_layout.addStretch()
+
 
 
         self.refresh_button = QPushButton(
@@ -114,27 +126,45 @@ class TransactionTable(QFrame):
         )
 
 
-        header.addWidget(
+        self.export_button = QPushButton(
+            "Export Excel"
+        )
+
+
+        self.import_button = QPushButton(
+            "Import Excel"
+        )
+
+
+
+        header_layout.addWidget(
             self.refresh_button
         )
 
 
-        header.addWidget(
+        header_layout.addWidget(
             self.delete_button
         )
 
 
-        layout.addLayout(
-            header
+        header_layout.addWidget(
+            self.export_button
         )
 
 
-        # ----------------------------
-        # Search Area
-        # ----------------------------
+        header_layout.addWidget(
+            self.import_button
+        )
 
 
-        search_layout = QHBoxLayout()
+        main_layout.addLayout(
+            header_layout
+        )
+
+
+
+        filter_layout = QHBoxLayout()
+
 
 
         self.search_box = QLineEdit()
@@ -143,6 +173,7 @@ class TransactionTable(QFrame):
         self.search_box.setPlaceholderText(
             "Search description or category..."
         )
+
 
 
         self.type_filter = QComboBox()
@@ -157,40 +188,45 @@ class TransactionTable(QFrame):
         )
 
 
-        search_layout.addWidget(
+
+        filter_layout.addWidget(
             self.search_box
         )
 
 
-        search_layout.addWidget(
+        filter_layout.addWidget(
             self.type_filter
         )
 
 
-        layout.addLayout(
-            search_layout
+        main_layout.addLayout(
+            filter_layout
         )
 
-
-        # ----------------------------
-        # Table
-        # ----------------------------
 
 
         self.table = QTableWidget()
 
 
+
         headers = [
 
             "ID",
+
             "Date",
+
             "Type",
+
             "Category",
+
             "Description",
+
             "Amount",
+
             "Created"
 
         ]
+
 
 
         self.table.setColumnCount(
@@ -223,12 +259,10 @@ class TransactionTable(QFrame):
         )
 
 
-        layout.addWidget(
+        main_layout.addWidget(
             self.table
         )
 
-
-        # Connections
 
 
         self.search_box.textChanged.connect(
@@ -248,6 +282,16 @@ class TransactionTable(QFrame):
 
         self.delete_button.clicked.connect(
             self.delete_clicked
+        )
+
+
+        self.export_button.clicked.connect(
+            self.export_clicked
+        )
+
+
+        self.import_button.clicked.connect(
+            self.import_clicked
         )
 
 
@@ -315,14 +359,15 @@ class TransactionTable(QFrame):
     def apply_filter(self):
 
 
-        search_text = (
+        text = (
             self.search_box
             .text()
             .lower()
+            .strip()
         )
 
 
-        selected_type = (
+        selected = (
             self.type_filter
             .currentText()
         )
@@ -336,24 +381,22 @@ class TransactionTable(QFrame):
 
             text_match = (
 
-                search_text in
-                str(record[3]).lower()
+                text in str(record[3]).lower()
 
                 or
 
-                search_text in
-                str(record[4]).lower()
+                text in str(record[4]).lower()
 
             )
 
 
             type_match = (
 
-                selected_type == "All"
+                selected == "All"
 
                 or
 
-                record[2] == selected_type
+                record[2] == selected
 
             )
 
@@ -401,9 +444,7 @@ class TransactionTable(QFrame):
     def delete_clicked(self):
 
 
-        transaction_id = (
-            self.selected_id()
-        )
+        transaction_id = self.selected_id()
 
 
         if transaction_id is None:
@@ -420,9 +461,10 @@ class TransactionTable(QFrame):
 
         confirm = QMessageBox.question(
             self,
-            "Confirm",
-            "Delete this transaction?"
+            "Confirm Delete",
+            "Delete selected transaction?"
         )
+
 
 
         if confirm == QMessageBox.Yes:
@@ -438,6 +480,25 @@ class TransactionTable(QFrame):
 
     def refresh_clicked(self):
 
+
         if self.refresh_callback:
 
             self.refresh_callback()
+
+
+
+    def export_clicked(self):
+
+
+        if self.export_callback:
+
+            self.export_callback()
+
+
+
+    def import_clicked(self):
+
+
+        if self.import_callback:
+
+            self.import_callback()

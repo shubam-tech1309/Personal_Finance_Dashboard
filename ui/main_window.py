@@ -4,9 +4,11 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QSplitter,
     QMessageBox,
+    QFileDialog,
 )
 
 from PySide6.QtCore import Qt
+
 
 from config.settings import (
     APP_NAME,
@@ -14,6 +16,7 @@ from config.settings import (
     WINDOW_WIDTH,
     WINDOW_HEIGHT,
 )
+
 
 from ui.header import Header
 
@@ -33,6 +36,10 @@ from utils.database import (
     DatabaseManager
 )
 
+from utils.excel_manager import (
+    ExcelManager
+)
+
 
 
 class MainWindow(QMainWindow):
@@ -44,6 +51,9 @@ class MainWindow(QMainWindow):
 
 
         self.database = DatabaseManager()
+
+        self.excel = ExcelManager()
+
 
 
         self.setWindowTitle(
@@ -69,15 +79,16 @@ class MainWindow(QMainWindow):
     def setup_ui(self):
 
 
-        central = QWidget()
+        central_widget = QWidget()
+
 
         self.setCentralWidget(
-            central
+            central_widget
         )
 
 
         layout = QVBoxLayout(
-            central
+            central_widget
         )
 
 
@@ -96,21 +107,26 @@ class MainWindow(QMainWindow):
 
         self.header = Header()
 
+
         layout.addWidget(
             self.header
         )
 
 
+
         self.dashboard_cards = DashboardCards()
+
 
         layout.addWidget(
             self.dashboard_cards
         )
 
 
+
         splitter = QSplitter(
             Qt.Horizontal
         )
+
 
 
         self.transaction_form = TransactionForm()
@@ -121,7 +137,9 @@ class MainWindow(QMainWindow):
         )
 
 
+
         self.transaction_table = TransactionTable()
+
 
 
         self.transaction_table.delete_callback = (
@@ -134,9 +152,21 @@ class MainWindow(QMainWindow):
         )
 
 
+        self.transaction_table.export_callback = (
+            self.export_excel
+        )
+
+
+        self.transaction_table.import_callback = (
+            self.import_excel
+        )
+
+
+
         self.transaction_table.table.doubleClicked.connect(
             self.edit_selected_transaction
         )
+
 
 
         splitter.addWidget(
@@ -190,7 +220,9 @@ class MainWindow(QMainWindow):
             )
 
 
-            message = "Transaction updated successfully."
+            message = (
+                "Transaction updated successfully."
+            )
 
 
         else:
@@ -211,7 +243,9 @@ class MainWindow(QMainWindow):
             )
 
 
-            message = "Transaction added successfully."
+            message = (
+                "Transaction added successfully."
+            )
 
 
 
@@ -228,14 +262,7 @@ class MainWindow(QMainWindow):
 
 
 
-    def edit_selected_transaction(
-        self
-    ):
-
-
-        transaction_id = (
-            self.transaction_table.selected_id()
-        )
+    def load_transactions(self):
 
 
         records = (
@@ -244,15 +271,9 @@ class MainWindow(QMainWindow):
         )
 
 
-        for record in records:
-
-            if record[0] == transaction_id:
-
-                self.transaction_form.load_transaction(
-                    record
-                )
-
-                break
+        self.transaction_table.load_data(
+            records
+        )
 
 
 
@@ -267,13 +288,32 @@ class MainWindow(QMainWindow):
         )
 
 
+        QMessageBox.information(
+            self,
+            "Deleted",
+            "Transaction deleted successfully."
+        )
+
+
         self.load_transactions()
 
         self.refresh_dashboard()
 
 
 
-    def load_transactions(self):
+    def edit_selected_transaction(self):
+
+
+        transaction_id = (
+            self.transaction_table.selected_id()
+        )
+
+
+        if transaction_id is None:
+
+            return
+
+
 
         records = (
             self.database
@@ -281,13 +321,23 @@ class MainWindow(QMainWindow):
         )
 
 
-        self.transaction_table.load_data(
-            records
-        )
+        for record in records:
+
+
+            if record[0] == transaction_id:
+
+
+                self.transaction_form.load_transaction(
+                    record
+                )
+
+
+                break
 
 
 
     def refresh_dashboard(self):
+
 
         stats = (
             self.database
@@ -306,3 +356,148 @@ class MainWindow(QMainWindow):
             stats["savings"]
 
         )
+
+
+
+    def export_excel(self):
+
+
+        records = (
+            self.database
+            .get_all_transactions()
+        )
+
+
+        if not records:
+
+            QMessageBox.warning(
+                self,
+                "No Data",
+                "No transactions available."
+            )
+
+            return
+
+
+
+        file_path, _ = QFileDialog.getSaveFileName(
+
+            self,
+
+            "Export Excel",
+
+            "transactions.xlsx",
+
+            "Excel Files (*.xlsx)"
+
+        )
+
+
+
+        if file_path:
+
+
+            self.excel.export_transactions(
+
+                records,
+
+                file_path
+
+            )
+
+
+            QMessageBox.information(
+
+                self,
+
+                "Export Complete",
+
+                "Excel file exported successfully."
+
+            )
+
+
+
+    def import_excel(self):
+
+
+        file_path, _ = QFileDialog.getOpenFileName(
+
+            self,
+
+            "Import Excel",
+
+            "",
+
+            "Excel Files (*.xlsx)"
+
+        )
+
+
+        if not file_path:
+
+            return
+
+
+
+        try:
+
+
+            transactions = (
+                self.excel
+                .import_transactions(
+                    file_path
+                )
+            )
+
+
+
+            for transaction in transactions:
+
+
+                self.database.add_transaction(
+
+                    transaction["date"],
+
+                    transaction["type"],
+
+                    transaction["category"],
+
+                    transaction["description"],
+
+                    transaction["amount"]
+
+                )
+
+
+
+            QMessageBox.information(
+
+                self,
+
+                "Import Complete",
+
+                f"{len(transactions)} transactions imported successfully."
+
+            )
+
+
+
+            self.load_transactions()
+
+            self.refresh_dashboard()
+
+
+
+        except Exception as error:
+
+
+            QMessageBox.critical(
+
+                self,
+
+                "Import Error",
+
+                str(error)
+
+            )

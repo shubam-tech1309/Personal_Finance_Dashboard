@@ -1,9 +1,11 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QComboBox,
     QFrame,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QPushButton,
     QMessageBox,
     QTableWidget,
@@ -15,11 +17,12 @@ from PySide6.QtWidgets import (
 
 class TransactionTable(QFrame):
     """
-    Displays saved transactions.
+    Transaction table with:
 
-    Provides:
+    - Search
+    - Type filter
     - Refresh
-    - Delete selected transaction
+    - Delete
     """
 
 
@@ -27,14 +30,20 @@ class TransactionTable(QFrame):
 
         super().__init__()
 
+
+        self.all_records = []
+
         self.delete_callback = None
+
         self.refresh_callback = None
+
 
         self.setup_ui()
 
 
 
     def setup_ui(self):
+
 
         self.setObjectName(
             "TransactionTable"
@@ -66,7 +75,12 @@ class TransactionTable(QFrame):
         )
 
 
-        top = QHBoxLayout()
+        # ----------------------------
+        # Header
+        # ----------------------------
+
+
+        header = QHBoxLayout()
 
 
         title = QLabel(
@@ -82,12 +96,12 @@ class TransactionTable(QFrame):
         )
 
 
-        top.addWidget(
+        header.addWidget(
             title
         )
 
 
-        top.addStretch()
+        header.addStretch()
 
 
         self.refresh_button = QPushButton(
@@ -100,20 +114,67 @@ class TransactionTable(QFrame):
         )
 
 
-        top.addWidget(
+        header.addWidget(
             self.refresh_button
         )
 
 
-        top.addWidget(
+        header.addWidget(
             self.delete_button
         )
 
 
         layout.addLayout(
-            top
+            header
         )
 
+
+        # ----------------------------
+        # Search Area
+        # ----------------------------
+
+
+        search_layout = QHBoxLayout()
+
+
+        self.search_box = QLineEdit()
+
+
+        self.search_box.setPlaceholderText(
+            "Search description or category..."
+        )
+
+
+        self.type_filter = QComboBox()
+
+
+        self.type_filter.addItems(
+            [
+                "All",
+                "Income",
+                "Expense"
+            ]
+        )
+
+
+        search_layout.addWidget(
+            self.search_box
+        )
+
+
+        search_layout.addWidget(
+            self.type_filter
+        )
+
+
+        layout.addLayout(
+            search_layout
+        )
+
+
+        # ----------------------------
+        # Table
+        # ----------------------------
 
 
         self.table = QTableWidget()
@@ -157,11 +218,6 @@ class TransactionTable(QFrame):
         )
 
 
-        self.table.setAlternatingRowColors(
-            True
-        )
-
-
         self.table.horizontalHeader().setSectionResizeMode(
             QHeaderView.Stretch
         )
@@ -169,6 +225,19 @@ class TransactionTable(QFrame):
 
         layout.addWidget(
             self.table
+        )
+
+
+        # Connections
+
+
+        self.search_box.textChanged.connect(
+            self.apply_filter
+        )
+
+
+        self.type_filter.currentTextChanged.connect(
+            self.apply_filter
         )
 
 
@@ -184,6 +253,19 @@ class TransactionTable(QFrame):
 
 
     def load_data(
+        self,
+        records
+    ):
+
+        self.all_records = records
+
+        self.display_records(
+            records
+        )
+
+
+
+    def display_records(
         self,
         records
     ):
@@ -207,7 +289,9 @@ class TransactionTable(QFrame):
 
                 if column == 5:
 
-                    value = f"₹ {float(value):,.2f}"
+                    value = (
+                        f"₹ {float(value):,.2f}"
+                    )
 
 
                 item = QTableWidgetItem(
@@ -225,6 +309,65 @@ class TransactionTable(QFrame):
                     column,
                     item
                 )
+
+
+
+    def apply_filter(self):
+
+
+        search_text = (
+            self.search_box
+            .text()
+            .lower()
+        )
+
+
+        selected_type = (
+            self.type_filter
+            .currentText()
+        )
+
+
+        filtered = []
+
+
+        for record in self.all_records:
+
+
+            text_match = (
+
+                search_text in
+                str(record[3]).lower()
+
+                or
+
+                search_text in
+                str(record[4]).lower()
+
+            )
+
+
+            type_match = (
+
+                selected_type == "All"
+
+                or
+
+                record[2] == selected_type
+
+            )
+
+
+            if text_match and type_match:
+
+                filtered.append(
+                    record
+                )
+
+
+        self.display_records(
+            filtered
+        )
 
 
 
@@ -257,7 +400,10 @@ class TransactionTable(QFrame):
 
     def delete_clicked(self):
 
-        transaction_id = self.selected_id()
+
+        transaction_id = (
+            self.selected_id()
+        )
 
 
         if transaction_id is None:
@@ -265,7 +411,7 @@ class TransactionTable(QFrame):
             QMessageBox.warning(
                 self,
                 "No Selection",
-                "Please select a transaction first."
+                "Select a transaction first."
             )
 
             return
@@ -274,8 +420,8 @@ class TransactionTable(QFrame):
 
         confirm = QMessageBox.question(
             self,
-            "Confirm Delete",
-            "Delete selected transaction?"
+            "Confirm",
+            "Delete this transaction?"
         )
 
 

@@ -2,14 +2,12 @@ from PySide6.QtWidgets import (
     QWidget,
     QMainWindow,
     QHBoxLayout,
-    QVBoxLayout,
-    QLabel
+    QVBoxLayout
 )
-
-from PySide6.QtCore import Qt
 
 from ui.sidebar import Sidebar
 from ui.header import Header
+from ui.cards import DashboardCards
 
 
 class MainWindow(QMainWindow):
@@ -19,57 +17,44 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("Personal Finance Dashboard")
 
-        self.resize(1200, 750)
+        self.resize(1200,750)
 
-        self.setMinimumSize(1000, 650)
+        self.setMinimumSize(1000,650)
 
-        # Central Widget
         central_widget = QWidget()
 
         self.setCentralWidget(central_widget)
 
-        # Main Horizontal Layout
         main_layout = QHBoxLayout()
 
-        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setContentsMargins(0,0,0,0)
 
         main_layout.setSpacing(0)
 
-        # Sidebar
         sidebar = Sidebar()
 
-        # Content Area
         content = QWidget()
 
         content_layout = QVBoxLayout()
 
-        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setContentsMargins(20,20,20,20)
 
-        content_layout.setSpacing(0)
+        content_layout.setSpacing(20)
 
-        # Header
         header = Header()
 
-        # Body
-        body = QLabel("Dashboard Content Coming Soon")
-
-        body.setAlignment(Qt.AlignCenter)
-
-        body.setStyleSheet("""
-            background:#F5F7FA;
-            font-size:22px;
-            color:#6B7280;
-        """)
+        cards = DashboardCards()
 
         content_layout.addWidget(header)
 
-        content_layout.addWidget(body)
+        content_layout.addWidget(cards)
+
+        content_layout.addStretch()
 
         content.setLayout(content_layout)
 
-        # Add Everything
         main_layout.addWidget(sidebar)
 
-        main_layout.addWidget(content)
+        main_layout.addWidget(content,1)
 
         central_widget.setLayout(main_layout)

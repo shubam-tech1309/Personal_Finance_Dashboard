@@ -1,15 +1,19 @@
 import sys
 
 from PySide6.QtWidgets import QApplication
-from PySide6.QtWidgets import QLabel
+
+from ui.main_window import MainWindow
 
 
-app = QApplication(sys.argv)
+def main():
+    app = QApplication(sys.argv)
 
-label = QLabel("Welcome to Personal Finance Dashboard!")
+    window = MainWindow()
 
-label.resize(500,100)
+    window.show()
 
-label.show()
+    sys.exit(app.exec())
 
-app.exec()
+
+if __name__ == "__main__":
+    main()

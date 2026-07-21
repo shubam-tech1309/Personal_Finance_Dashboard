@@ -8,11 +8,9 @@ from config.settings import (
 
 class DatabaseManager:
     """
-    Handles all SQLite database operations.
-
-    UI files should never directly write SQL.
-    They should communicate through this class.
+    Handles all SQLite operations.
     """
+
 
     def __init__(self):
 
@@ -24,11 +22,13 @@ class DatabaseManager:
         self.initialize_database()
 
 
+
     def get_connection(self):
 
         return sqlite3.connect(
             DATABASE_FILE
         )
+
 
 
     def initialize_database(self):
@@ -42,7 +42,6 @@ class DatabaseManager:
             """
             CREATE TABLE IF NOT EXISTS transactions
             (
-
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
 
                 transaction_date TEXT NOT NULL,
@@ -56,7 +55,6 @@ class DatabaseManager:
                 amount REAL NOT NULL,
 
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-
             )
             """
         )
@@ -70,15 +68,12 @@ class DatabaseManager:
 
     def add_transaction(
         self,
-        transaction_date,
+        date,
         transaction_type,
         category,
         description,
         amount,
     ):
-        """
-        Inserts a new transaction.
-        """
 
         connection = self.get_connection()
 
@@ -104,10 +99,9 @@ class DatabaseManager:
                 ?,
                 ?
             )
-
             """,
             (
-                transaction_date,
+                date,
                 transaction_type,
                 category,
                 description,
@@ -123,9 +117,6 @@ class DatabaseManager:
 
 
     def get_all_transactions(self):
-        """
-        Returns all transactions.
-        """
 
         connection = self.get_connection()
 
@@ -135,13 +126,14 @@ class DatabaseManager:
         cursor.execute(
             """
             SELECT
-                id,
-                transaction_date,
-                transaction_type,
-                category,
-                description,
-                amount,
-                created_at
+
+            id,
+            transaction_date,
+            transaction_type,
+            category,
+            description,
+            amount,
+            created_at
 
             FROM transactions
 
@@ -151,13 +143,13 @@ class DatabaseManager:
         )
 
 
-        records = cursor.fetchall()
+        data = cursor.fetchall()
 
 
         connection.close()
 
 
-        return records
+        return data
 
 
 
@@ -166,8 +158,9 @@ class DatabaseManager:
         transaction_id
     ):
         """
-        Deletes transaction by ID.
+        Deletes transaction permanently.
         """
+
 
         connection = self.get_connection()
 
@@ -190,3 +183,67 @@ class DatabaseManager:
         connection.commit()
 
         connection.close()
+
+
+
+    def get_statistics(self):
+
+        connection = self.get_connection()
+
+        cursor = connection.cursor()
+
+
+        cursor.execute(
+            """
+            SELECT
+
+            transaction_type,
+            SUM(amount)
+
+            FROM transactions
+
+            GROUP BY transaction_type
+
+            """
+        )
+
+
+        rows = cursor.fetchall()
+
+
+        income = 0
+
+        expense = 0
+
+
+        for row in rows:
+
+
+            if row[0] == "Income":
+
+                income = row[1] or 0
+
+
+            elif row[0] == "Expense":
+
+                expense = row[1] or 0
+
+
+
+        balance = income - expense
+
+
+        connection.close()
+
+
+        return {
+
+            "income": income,
+
+            "expense": expense,
+
+            "balance": balance,
+
+            "savings": balance
+
+        }

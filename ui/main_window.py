@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (
     QSplitter,
     QMessageBox,
 )
+
 from PySide6.QtCore import Qt
 
 
@@ -63,13 +64,14 @@ class MainWindow(QMainWindow):
 
         self.load_transactions()
 
+        self.refresh_dashboard()
+
 
 
     def setup_ui(self):
 
 
         central = QWidget()
-
 
         self.setCentralWidget(
             central
@@ -124,6 +126,16 @@ class MainWindow(QMainWindow):
         self.transaction_table = TransactionTable()
 
 
+        self.transaction_table.delete_callback = (
+            self.delete_transaction
+        )
+
+
+        self.transaction_table.refresh_callback = (
+            self.load_transactions
+        )
+
+
         splitter.addWidget(
             self.transaction_form
         )
@@ -153,7 +165,6 @@ class MainWindow(QMainWindow):
         data
     ):
 
-
         self.database.add_transaction(
             data["date"],
             data["type"],
@@ -172,10 +183,11 @@ class MainWindow(QMainWindow):
 
         self.load_transactions()
 
+        self.refresh_dashboard()
+
 
 
     def load_transactions(self):
-
 
         records = (
             self.database
@@ -185,4 +197,50 @@ class MainWindow(QMainWindow):
 
         self.transaction_table.load_data(
             records
+        )
+
+
+
+    def delete_transaction(
+        self,
+        transaction_id
+    ):
+
+
+        self.database.delete_transaction(
+            transaction_id
+        )
+
+
+        QMessageBox.information(
+            self,
+            "Deleted",
+            "Transaction deleted successfully."
+        )
+
+
+        self.load_transactions()
+
+        self.refresh_dashboard()
+
+
+
+    def refresh_dashboard(self):
+
+        stats = (
+            self.database
+            .get_statistics()
+        )
+
+
+        self.dashboard_cards.update_statistics(
+
+            stats["balance"],
+
+            stats["income"],
+
+            stats["expense"],
+
+            stats["savings"]
+
         )

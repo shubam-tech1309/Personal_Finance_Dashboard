@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
+    QMessageBox,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -14,160 +15,283 @@ from PySide6.QtWidgets import (
 
 class TransactionTable(QFrame):
     """
-    Displays all finance transactions.
-    Database integration will be implemented in a later feature.
+    Displays saved transactions.
+
+    Provides:
+    - Refresh
+    - Delete selected transaction
     """
 
-    HEADERS = [
-        "ID",
-        "Date",
-        "Type",
-        "Category",
-        "Description",
-        "Amount",
-        "Created At",
-    ]
 
     def __init__(self):
+
         super().__init__()
+
+        self.delete_callback = None
+        self.refresh_callback = None
 
         self.setup_ui()
 
+
+
     def setup_ui(self):
-        self.setObjectName("TransactionTable")
 
-        self.setStyleSheet("""
-        QFrame#TransactionTable{
-            background:white;
-            border:1px solid #E5E7EB;
-            border-radius:14px;
-        }
+        self.setObjectName(
+            "TransactionTable"
+        )
 
-        QLabel{
-            border:none;
-            background:transparent;
-        }
-        """)
 
-        main_layout = QVBoxLayout(self)
+        self.setStyleSheet(
+            """
+            QFrame#TransactionTable
+            {
+                background:white;
+                border:1px solid #E5E7EB;
+                border-radius:14px;
+            }
+            """
+        )
 
-        main_layout.setContentsMargins(20, 20, 20, 20)
-        main_layout.setSpacing(16)
 
-        header_layout = QHBoxLayout()
+        layout = QVBoxLayout(
+            self
+        )
 
-        title = QLabel("Transactions")
 
-        title.setStyleSheet("""
+        layout.setContentsMargins(
+            20,
+            20,
+            20,
+            20
+        )
+
+
+        top = QHBoxLayout()
+
+
+        title = QLabel(
+            "Transactions"
+        )
+
+
+        title.setStyleSheet(
+            """
             font-size:16px;
             font-weight:700;
-            color:#111827;
-        """)
+            """
+        )
 
-        header_layout.addWidget(title)
 
-        header_layout.addStretch()
+        top.addWidget(
+            title
+        )
 
-        self.refresh_button = QPushButton("Refresh")
 
-        header_layout.addWidget(self.refresh_button)
+        top.addStretch()
 
-        main_layout.addLayout(header_layout)
+
+        self.refresh_button = QPushButton(
+            "Refresh"
+        )
+
+
+        self.delete_button = QPushButton(
+            "Delete"
+        )
+
+
+        top.addWidget(
+            self.refresh_button
+        )
+
+
+        top.addWidget(
+            self.delete_button
+        )
+
+
+        layout.addLayout(
+            top
+        )
+
+
 
         self.table = QTableWidget()
 
-        self.table.setColumnCount(len(self.HEADERS))
-        self.table.setHorizontalHeaderLabels(self.HEADERS)
 
-        self.table.setAlternatingRowColors(True)
+        headers = [
+
+            "ID",
+            "Date",
+            "Type",
+            "Category",
+            "Description",
+            "Amount",
+            "Created"
+
+        ]
+
+
+        self.table.setColumnCount(
+            len(headers)
+        )
+
+
+        self.table.setHorizontalHeaderLabels(
+            headers
+        )
+
 
         self.table.setSelectionBehavior(
             QAbstractItemView.SelectRows
         )
 
-        self.table.setSelectionMode(
-            QAbstractItemView.SingleSelection
-        )
 
         self.table.setEditTriggers(
             QAbstractItemView.NoEditTriggers
         )
 
-        self.table.setSortingEnabled(True)
 
-        self.table.setShowGrid(False)
+        self.table.verticalHeader().setVisible(
+            False
+        )
 
-        self.table.verticalHeader().setVisible(False)
 
-        header = self.table.horizontalHeader()
+        self.table.setAlternatingRowColors(
+            True
+        )
 
-        header.setSectionResizeMode(QHeaderView.Stretch)
 
-        self.table.setMinimumHeight(350)
+        self.table.horizontalHeader().setSectionResizeMode(
+            QHeaderView.Stretch
+        )
 
-        main_layout.addWidget(self.table)
 
-    def clear_table(self):
-        self.table.setRowCount(0)
+        layout.addWidget(
+            self.table
+        )
 
-    def load_data(self, records):
-        """
-        records should be a list of tuples from SQLite.
 
-        Example:
-        [
-            (
-                id,
-                date,
-                type,
-                category,
-                description,
-                amount,
-                created_at
+        self.refresh_button.clicked.connect(
+            self.refresh_clicked
+        )
+
+
+        self.delete_button.clicked.connect(
+            self.delete_clicked
+        )
+
+
+
+    def load_data(
+        self,
+        records
+    ):
+
+
+        self.table.setRowCount(
+            0
+        )
+
+
+        for row, record in enumerate(records):
+
+
+            self.table.insertRow(
+                row
             )
-        ]
-        """
 
-        self.table.setSortingEnabled(False)
-
-        self.table.setRowCount(0)
-
-        for row_number, record in enumerate(records):
-
-            self.table.insertRow(row_number)
 
             for column, value in enumerate(record):
 
-                if column == 5:
-                    text = f"₹ {float(value):,.2f}"
-                else:
-                    text = str(value)
 
-                item = QTableWidgetItem(text)
+                if column == 5:
+
+                    value = f"₹ {float(value):,.2f}"
+
+
+                item = QTableWidgetItem(
+                    str(value)
+                )
+
 
                 item.setTextAlignment(
                     Qt.AlignCenter
-                    if column != 4
-                    else Qt.AlignLeft | Qt.AlignVCenter
                 )
+
 
                 self.table.setItem(
-                    row_number,
+                    row,
                     column,
-                    item,
+                    item
                 )
 
-        self.table.setSortingEnabled(True)
 
-    def selected_transaction_id(self):
+
+    def selected_id(self):
+
         row = self.table.currentRow()
 
+
         if row < 0:
+
             return None
 
-        item = self.table.item(row, 0)
 
-        if item is None:
-            return None
+        item = self.table.item(
+            row,
+            0
+        )
 
-        return int(item.text())
+
+        if item:
+
+            return int(
+                item.text()
+            )
+
+
+        return None
+
+
+
+    def delete_clicked(self):
+
+        transaction_id = self.selected_id()
+
+
+        if transaction_id is None:
+
+            QMessageBox.warning(
+                self,
+                "No Selection",
+                "Please select a transaction first."
+            )
+
+            return
+
+
+
+        confirm = QMessageBox.question(
+            self,
+            "Confirm Delete",
+            "Delete selected transaction?"
+        )
+
+
+        if confirm == QMessageBox.Yes:
+
+
+            if self.delete_callback:
+
+                self.delete_callback(
+                    transaction_id
+                )
+
+
+
+    def refresh_clicked(self):
+
+        if self.refresh_callback:
+
+            self.refresh_callback()

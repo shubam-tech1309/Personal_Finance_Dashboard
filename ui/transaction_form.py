@@ -1,39 +1,50 @@
-from PySide6.QtCore import QDate
+from PySide6.QtCore import QDate, Qt
+
 from PySide6.QtWidgets import (
-    QComboBox,
-    QDateEdit,
-    QDoubleSpinBox,
-    QFormLayout,
     QFrame,
+    QVBoxLayout,
     QHBoxLayout,
     QLabel,
+    QFormLayout,
+    QDateEdit,
+    QComboBox,
     QLineEdit,
+    QDoubleSpinBox,
     QPushButton,
-    QVBoxLayout,
     QMessageBox,
 )
 
 from utils.validators import (
-    title_case,
+    clean_text,
+    clean_category,
+    clean_description,
+    clean_amount,
     validate_transaction,
 )
 
 
+
 class TransactionForm(QFrame):
+
 
     def __init__(self):
 
         super().__init__()
 
+
         self.save_callback = None
 
         self.edit_id = None
 
+
         self.setup_ui()
+
+        self.setup_navigation()
 
 
 
     def setup_ui(self):
+
 
         self.setObjectName(
             "TransactionForm"
@@ -42,12 +53,34 @@ class TransactionForm(QFrame):
 
         self.setStyleSheet(
             """
+
             QFrame#TransactionForm
             {
-                background:white;
-                border:1px solid #E5E7EB;
+                background:#FFFFFF;
                 border-radius:14px;
+                border:1px solid #E5E7EB;
             }
+
+
+            QLineEdit,
+            QComboBox,
+            QDateEdit,
+            QDoubleSpinBox
+            {
+                padding:8px;
+                font-size:14px;
+                border-radius:8px;
+                border:1px solid #D1D5DB;
+            }
+
+
+            QPushButton
+            {
+                padding:10px;
+                border-radius:8px;
+                font-weight:600;
+            }
+
             """
         )
 
@@ -65,14 +98,15 @@ class TransactionForm(QFrame):
         )
 
 
+
         title = QLabel(
-            "Transaction"
+            "Add Transaction"
         )
 
 
         title.setStyleSheet(
             """
-            font-size:16px;
+            font-size:18px;
             font-weight:700;
             """
         )
@@ -83,21 +117,27 @@ class TransactionForm(QFrame):
         )
 
 
+
         form = QFormLayout()
+
 
 
         self.date_edit = QDateEdit()
 
+
         self.date_edit.setDate(
             QDate.currentDate()
         )
+
 
         self.date_edit.setCalendarPopup(
             True
         )
 
 
+
         self.type_combo = QComboBox()
+
 
         self.type_combo.addItems(
             [
@@ -107,38 +147,42 @@ class TransactionForm(QFrame):
         )
 
 
-        self.category_combo = QComboBox()
 
-        self.category_combo.addItems(
-            [
-                "Salary",
-                "Business",
-                "Food",
-                "Transport",
-                "Shopping",
-                "Bills",
-                "Investment",
-                "Other"
-            ]
+        self.category_input = QLineEdit()
+
+
+        self.category_input.setPlaceholderText(
+            "Category"
         )
+
 
 
         self.description_input = QLineEdit()
 
 
+        self.description_input.setPlaceholderText(
+            "Description"
+        )
+
+
+
         self.amount_input = QDoubleSpinBox()
+
+
+        self.amount_input.setPrefix(
+            "₹ "
+        )
+
 
         self.amount_input.setMaximum(
             999999999
         )
 
+
         self.amount_input.setDecimals(
             2
         )
 
-        self.amount_input.setPrefix(
-            "₹ "
-        )
 
 
         form.addRow(
@@ -155,7 +199,7 @@ class TransactionForm(QFrame):
 
         form.addRow(
             "Category",
-            self.category_combo
+            self.category_input
         )
 
 
@@ -176,16 +220,18 @@ class TransactionForm(QFrame):
         )
 
 
+
         buttons = QHBoxLayout()
 
 
+
         self.save_button = QPushButton(
-            "Save Transaction"
+            "Save Transaction  (Ctrl + S)"
         )
 
 
         self.clear_button = QPushButton(
-            "Clear"
+            "Clear  (Ctrl + L)"
         )
 
 
@@ -204,6 +250,7 @@ class TransactionForm(QFrame):
         )
 
 
+
         self.save_button.clicked.connect(
             self.handle_save
         )
@@ -215,63 +262,159 @@ class TransactionForm(QFrame):
 
 
 
+    def setup_navigation(self):
+
+
+        fields = [
+
+            self.date_edit,
+
+            self.type_combo,
+
+            self.category_input,
+
+            self.description_input,
+
+            self.amount_input,
+
+        ]
+
+
+
+        for field in fields:
+
+            field.setFocusPolicy(
+                Qt.StrongFocus
+            )
+
+
+
+        self.date_edit.editingFinished.connect(
+
+            lambda:
+            self.type_combo.setFocus()
+
+        )
+
+
+
+        self.type_combo.activated.connect(
+
+            lambda:
+            self.category_input.setFocus()
+
+        )
+
+
+
+        self.category_input.returnPressed.connect(
+
+            lambda:
+            self.description_input.setFocus()
+
+        )
+
+
+
+        self.description_input.returnPressed.connect(
+
+            lambda:
+            self.amount_input.setFocus()
+
+        )
+
+
+
+        self.amount_input.lineEdit().returnPressed.connect(
+
+            self.handle_save
+
+        )
+
+
+
     def handle_save(self):
 
 
-        description = title_case(
-            self.description_input.text()
+        data = {
+
+
+            "date":
+
+            self.date_edit
+            .date()
+            .toString(
+                "yyyy-MM-dd"
+            ),
+
+
+
+            "type":
+
+            clean_text(
+                self.type_combo.currentText()
+            ),
+
+
+
+            "category":
+
+            clean_category(
+                self.category_input.text()
+            ),
+
+
+
+            "description":
+
+            clean_description(
+                self.description_input.text()
+            ),
+
+
+
+            "amount":
+
+            clean_amount(
+                self.amount_input.value()
+            )
+
+        }
+
+
+
+        valid, errors = validate_transaction(
+            data
         )
 
-
-        amount = self.amount_input.value()
-
-
-        valid, message = validate_transaction(
-            description,
-            amount
-        )
 
 
         if not valid:
 
+
             QMessageBox.warning(
+
                 self,
-                "Validation Error",
-                message
+
+                "Check Details",
+
+                "\n".join(errors)
+
             )
 
             return
 
 
 
-        data = {
-
-            "date":
-            self.date_edit.date().toString(
-                "yyyy-MM-dd"
-            ),
-
-            "type":
-            self.type_combo.currentText(),
-
-            "category":
-            self.category_combo.currentText(),
-
-            "description":
-            description,
-
-            "amount":
-            amount
-
-        }
-
-
-
         if self.save_callback:
 
+
             self.save_callback(
+
                 data,
+
                 self.edit_id
+
             )
 
 
@@ -285,44 +428,77 @@ class TransactionForm(QFrame):
         record
     ):
 
+
         self.edit_id = record[0]
 
 
         self.date_edit.setDate(
+
             QDate.fromString(
+
                 record[1],
+
                 "yyyy-MM-dd"
+
             )
+
         )
 
 
         self.type_combo.setCurrentText(
+
             record[2]
+
         )
 
 
-        self.category_combo.setCurrentText(
+        self.category_input.setText(
+
             record[3]
+
         )
 
 
         self.description_input.setText(
+
             record[4]
+
         )
 
 
         self.amount_input.setValue(
+
             float(record[5])
+
         )
 
 
 
     def clear_form(self):
 
+
         self.edit_id = None
 
+
+        self.date_edit.setDate(
+            QDate.currentDate()
+        )
+
+
+        self.type_combo.setCurrentIndex(
+            0
+        )
+
+
+        self.category_input.clear()
+
+
         self.description_input.clear()
+
 
         self.amount_input.setValue(
             0
         )
+
+
+        self.date_edit.setFocus()

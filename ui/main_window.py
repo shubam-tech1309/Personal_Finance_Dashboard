@@ -2,12 +2,16 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QWidget,
     QVBoxLayout,
+    QHBoxLayout,
+    QLabel,
     QSplitter,
-    QMessageBox,
-    QFileDialog,
 )
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import (
+    Qt,
+    QTimer,
+    QTime,
+)
 
 
 from config.settings import (
@@ -52,19 +56,26 @@ class MainWindow(QMainWindow):
 
         self.database = DatabaseManager()
 
+
         self.excel = ExcelManager()
 
 
 
         self.setWindowTitle(
+
             f"{APP_NAME} v{APP_VERSION}"
+
         )
 
 
         self.resize(
+
             WINDOW_WIDTH,
+
             WINDOW_HEIGHT
+
         )
+
 
 
         self.setup_ui()
@@ -72,44 +83,74 @@ class MainWindow(QMainWindow):
 
         self.load_transactions()
 
+
         self.refresh_dashboard()
+
+
+
+        self.start_status_timer()
+
+
+
+        self.clearFocus()
+
+        self.setFocus(
+
+            Qt.OtherFocusReason
+
+        )
+
 
 
 
     def setup_ui(self):
 
 
-        central_widget = QWidget()
+        central = QWidget()
 
 
         self.setCentralWidget(
-            central_widget
+
+            central
+
         )
 
 
-        layout = QVBoxLayout(
-            central_widget
+        main_layout = QVBoxLayout(
+
+            central
+
         )
 
 
-        layout.setContentsMargins(
+        main_layout.setContentsMargins(
+
             20,
+
             20,
+
             20,
-            20
+
+            10
+
         )
 
 
-        layout.setSpacing(
-            20
+        main_layout.setSpacing(
+
+            15
+
         )
+
 
 
         self.header = Header()
 
 
-        layout.addWidget(
+        main_layout.addWidget(
+
             self.header
+
         )
 
 
@@ -117,14 +158,19 @@ class MainWindow(QMainWindow):
         self.dashboard_cards = DashboardCards()
 
 
-        layout.addWidget(
+
+        main_layout.addWidget(
+
             self.dashboard_cards
+
         )
 
 
 
         splitter = QSplitter(
+
             Qt.Horizontal
+
         )
 
 
@@ -132,8 +178,11 @@ class MainWindow(QMainWindow):
         self.transaction_form = TransactionForm()
 
 
+
         self.transaction_form.save_callback = (
+
             self.save_transaction
+
         )
 
 
@@ -143,60 +192,202 @@ class MainWindow(QMainWindow):
 
 
         self.transaction_table.delete_callback = (
+
             self.delete_transaction
+
         )
 
 
         self.transaction_table.refresh_callback = (
+
             self.load_transactions
-        )
 
-
-        self.transaction_table.export_callback = (
-            self.export_excel
-        )
-
-
-        self.transaction_table.import_callback = (
-            self.import_excel
-        )
-
-
-
-        self.transaction_table.table.doubleClicked.connect(
-            self.edit_selected_transaction
         )
 
 
 
         splitter.addWidget(
+
             self.transaction_form
+
         )
 
 
         splitter.addWidget(
+
             self.transaction_table
+
         )
+
 
 
         splitter.setSizes(
+
             [
+
                 380,
+
                 900
+
             ]
+
         )
 
 
-        layout.addWidget(
+        main_layout.addWidget(
+
             splitter
+
         )
 
+
+
+        shortcut_panel = QLabel(
+
+            """
+
+            Keyboard Shortcuts:
+
+            Alt + A  Add Transaction
+
+            Ctrl + S  Save
+
+            Ctrl + F  Search
+
+            Ctrl + E  Export Excel
+
+            Ctrl + I  Import Excel
+
+            Delete   Delete Selected
+
+            F5       Refresh
+
+            """
+
+        )
+
+
+        shortcut_panel.setStyleSheet(
+
+            """
+
+            background:white;
+
+            border-radius:12px;
+
+            padding:12px;
+
+            color:#475569;
+
+            """
+
+        )
+
+
+
+        main_layout.addWidget(
+
+            shortcut_panel
+
+        )
+
+
+
+        self.status_label = QLabel()
+
+
+        self.status_label.setStyleSheet(
+
+            """
+
+            color:#475569;
+
+            padding:5px;
+
+            """
+
+        )
+
+
+
+        self.statusBar().addWidget(
+
+            self.status_label
+
+        )
+
+
+
+
+    # =========================
+    # Keyboard Actions
+    # =========================
+
+
+    def open_add_transaction(self):
+
+
+        self.transaction_form.clear_form()
+
+
+        self.transaction_form.focus_first_field()
+
+
+
+    def save_current_transaction(self):
+
+
+        self.transaction_form.handle_save()
+
+
+
+    def clear_transaction_form(self):
+
+
+        self.transaction_form.clear_form()
+
+
+
+    def focus_search(self):
+
+
+        self.transaction_table.search_box.setFocus()
+
+
+
+    def delete_selected_transaction(self):
+
+
+        row = (
+
+            self.transaction_table.selected_id()
+
+        )
+
+
+        if row:
+
+            self.delete_transaction(
+
+                row
+
+            )
+
+
+
+    # =========================
+    # Database
+    # =========================
 
 
     def save_transaction(
+
         self,
+
         data,
+
         edit_id=None
+
     ):
 
 
@@ -207,21 +398,8 @@ class MainWindow(QMainWindow):
 
                 edit_id,
 
-                data["date"],
+                data
 
-                data["type"],
-
-                data["category"],
-
-                data["description"],
-
-                data["amount"]
-
-            )
-
-
-            message = (
-                "Transaction updated successfully."
             )
 
 
@@ -230,35 +408,17 @@ class MainWindow(QMainWindow):
 
             self.database.add_transaction(
 
-                data["date"],
-
-                data["type"],
-
-                data["category"],
-
-                data["description"],
-
-                data["amount"]
+                data
 
             )
 
-
-            message = (
-                "Transaction added successfully."
-            )
-
-
-
-        QMessageBox.information(
-            self,
-            "Success",
-            message
-        )
 
 
         self.load_transactions()
 
+
         self.refresh_dashboard()
+
 
 
 
@@ -266,73 +426,45 @@ class MainWindow(QMainWindow):
 
 
         records = (
+
             self.database
             .get_all_transactions()
+
         )
 
 
         self.transaction_table.load_data(
+
             records
+
         )
+
+
+        self.update_status()
 
 
 
     def delete_transaction(
+
         self,
+
         transaction_id
+
     ):
 
 
         self.database.delete_transaction(
+
             transaction_id
-        )
 
-
-        QMessageBox.information(
-            self,
-            "Deleted",
-            "Transaction deleted successfully."
         )
 
 
         self.load_transactions()
 
+
         self.refresh_dashboard()
 
-
-
-    def edit_selected_transaction(self):
-
-
-        transaction_id = (
-            self.transaction_table.selected_id()
-        )
-
-
-        if transaction_id is None:
-
-            return
-
-
-
-        records = (
-            self.database
-            .get_all_transactions()
-        )
-
-
-        for record in records:
-
-
-            if record[0] == transaction_id:
-
-
-                self.transaction_form.load_transaction(
-                    record
-                )
-
-
-                break
 
 
 
@@ -340,8 +472,10 @@ class MainWindow(QMainWindow):
 
 
         stats = (
+
             self.database
             .get_statistics()
+
         )
 
 
@@ -359,145 +493,46 @@ class MainWindow(QMainWindow):
 
 
 
-    def export_excel(self):
+
+    def update_status(self):
 
 
-        records = (
+        count = len(
+
             self.database
             .get_all_transactions()
+
         )
 
 
-        if not records:
+        self.status_label.setText(
 
-            QMessageBox.warning(
-                self,
-                "No Data",
-                "No transactions available."
-            )
-
-            return
-
-
-
-        file_path, _ = QFileDialog.getSaveFileName(
-
-            self,
-
-            "Export Excel",
-
-            "transactions.xlsx",
-
-            "Excel Files (*.xlsx)"
+            f"Database Connected ✓     Transactions: {count}"
 
         )
 
 
 
-        if file_path:
+
+    def start_status_timer(self):
 
 
-            self.excel.export_transactions(
+        timer = QTimer(
 
-                records,
-
-                file_path
-
-            )
-
-
-            QMessageBox.information(
-
-                self,
-
-                "Export Complete",
-
-                "Excel file exported successfully."
-
-            )
-
-
-
-    def import_excel(self):
-
-
-        file_path, _ = QFileDialog.getOpenFileName(
-
-            self,
-
-            "Import Excel",
-
-            "",
-
-            "Excel Files (*.xlsx)"
+            self
 
         )
 
 
-        if not file_path:
+        timer.timeout.connect(
 
-            return
+            self.update_status
 
-
-
-        try:
+        )
 
 
-            transactions = (
-                self.excel
-                .import_transactions(
-                    file_path
-                )
-            )
+        timer.start(
 
+            5000
 
-
-            for transaction in transactions:
-
-
-                self.database.add_transaction(
-
-                    transaction["date"],
-
-                    transaction["type"],
-
-                    transaction["category"],
-
-                    transaction["description"],
-
-                    transaction["amount"]
-
-                )
-
-
-
-            QMessageBox.information(
-
-                self,
-
-                "Import Complete",
-
-                f"{len(transactions)} transactions imported successfully."
-
-            )
-
-
-
-            self.load_transactions()
-
-            self.refresh_dashboard()
-
-
-
-        except Exception as error:
-
-
-            QMessageBox.critical(
-
-                self,
-
-                "Import Error",
-
-                str(error)
-
-            )
+        )

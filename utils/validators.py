@@ -1,143 +1,211 @@
-"""
-=========================================================
-Personal Finance Dashboard
-Validation Utilities
-=========================================================
+import re
 
-Reusable validation functions.
-
-UI components should call these functions
-instead of writing validation logic repeatedly.
-"""
+from PySide6.QtCore import QDate
 
 
-def clean_text(value: str) -> str:
+
+def clean_text(
+    text
+):
     """
-    Removes extra spaces.
-
-    Example:
-    "  salary income  "
-    becomes:
-    "salary income"
+    Cleans and formats user text.
     """
 
-    if value is None:
+    if text is None:
+
         return ""
 
-    return value.strip()
+
+    text = str(text)
+
+
+    # Remove extra spaces
+
+    text = re.sub(
+        r"\s+",
+        " ",
+        text
+    )
+
+
+    text = text.strip()
 
 
 
-def title_case(value: str) -> str:
-    """
-    Converts text into Title Case.
+    # Title case conversion
 
-    Example:
-
-    "monthly salary"
-
-    becomes:
-
-    "Monthly Salary"
-    """
-
-    value = clean_text(value)
-
-    return value.title()
+    text = text.title()
 
 
 
-def validate_required(
-    value: str,
-    field_name: str
+    return text
+
+
+
+
+
+def clean_category(
+    category
 ):
-    """
-    Checks required fields.
 
-    Returns:
-    (True, "")
-    if valid
-
-    (False, error message)
-    if invalid
-    """
-
-    value = clean_text(value)
+    category = clean_text(
+        category
+    )
 
 
-    if not value:
+    if not category:
 
-        return (
-            False,
-            f"{field_name} is required."
-        )
+        return "Other"
 
 
-    return (
-        True,
-        ""
+    return category
+
+
+
+
+
+def clean_description(
+    description
+):
+
+    return clean_text(
+        description
     )
 
 
 
-def validate_amount(
-    amount: float
+
+
+def clean_amount(
+    amount
 ):
-    """
-    Validates transaction amount.
-    """
 
-    if amount <= 0:
 
-        return (
-            False,
-            "Amount must be greater than zero."
+    try:
+
+        amount = float(
+            amount
         )
 
 
-    return (
-        True,
-        ""
+    except:
+
+        return 0
+
+
+
+    if amount < 0:
+
+        return 0
+
+
+
+    return round(
+        amount,
+        2
     )
+
+
+
+
+
+def validate_date(
+    date_text
+):
+
+
+    if not date_text:
+
+        return False
+
+
+
+    date = QDate.fromString(
+
+        date_text,
+
+        "yyyy-MM-dd"
+
+    )
+
+
+    return date.isValid()
+
+
 
 
 
 def validate_transaction(
-    description: str,
-    amount: float
+    data
 ):
-    """
-    Complete transaction validation.
-    """
 
-    valid, message = validate_required(
-        description,
-        "Description"
-    )
+    errors = []
 
 
-    if not valid:
 
-        return (
-            False,
-            message
+    if not data.get(
+        "date"
+    ):
+
+        errors.append(
+            "Date is required."
         )
 
 
-    valid, message = validate_amount(
-        amount
+
+    if not data.get(
+        "type"
+    ):
+
+        errors.append(
+            "Transaction type required."
+        )
+
+
+
+    if not data.get(
+        "category"
+    ):
+
+        errors.append(
+            "Category required."
+        )
+
+
+
+    if not data.get(
+        "description"
+    ):
+
+        errors.append(
+            "Description required."
+        )
+
+
+
+    amount = clean_amount(
+
+        data.get(
+            "amount",
+            0
+        )
+
     )
 
 
-    if not valid:
 
-        return (
-            False,
-            message
+    if amount <= 0:
+
+        errors.append(
+            "Amount must be greater than zero."
         )
+
 
 
     return (
-        True,
-        ""
+
+        len(errors) == 0,
+
+        errors
+
     )

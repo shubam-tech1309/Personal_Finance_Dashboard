@@ -1,0 +1,17 @@
+QMainWindow{
+
+    background:#F5F7FA;
+
+}
+
+QLabel{
+
+    font-family:Segoe UI;
+
+}
+
+QPushButton{
+
+    font-family:Segoe UI;
+
+}

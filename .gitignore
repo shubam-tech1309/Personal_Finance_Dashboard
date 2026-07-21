@@ -1,3 +1,31 @@
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+
+# Virtual Environment
+.venv/
+venv/
+env/
+
+# VS Code
 .vscode/
+
+# Database
+database/*.db
+
+# Logs
+*.log
+
+# Build
+build/
+dist/
+
+# Installer
+*.spec
+
+# OS Files
+Thumbs.db
+.DS_Store
